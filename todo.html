@@ -6,11 +6,12 @@
     <title>Vibe To-Do</title>
     <style>
         :root {
-            --high-priority: #ffebee; /* Light red */
-            --medium-priority: #fff8e1; /* Light yellow */
-            --low-priority: #e3f2fd; /* Light blue */
+            --high-priority: #ffcdd2; /* Softer red */
+            --medium-priority: #fff9c4; /* Warm yellow */
+            --low-priority: #c8e6c9; /* Soft green */
             --no-priority: white;
             --completion-flash: #e8f5e9; /* Light green */
+            --delete-color: #ffebee; /* Light red for delete actions */
         }
         
         body {
@@ -22,35 +23,6 @@
             height: 100vh;
             box-sizing: border-box;
             touch-action: pan-y;
-            transition: background-color 0.3s;
-        }
-        
-        /* Priority backgrounds for entire screen */
-        .priority-high {
-            background-color: var(--high-priority);
-        }
-        
-        .priority-medium {
-            background-color: var(--medium-priority);
-        }
-        
-        .priority-low {
-            background-color: var(--low-priority);
-        }
-        
-        .priority-none {
-            background-color: var(--no-priority);
-        }
-        
-        /* Completion flash for entire screen */
-        @keyframes completionFlash {
-            0% { background-color: inherit; }
-            50% { background-color: var(--completion-flash); }
-            100% { background-color: inherit; }
-        }
-        
-        .completion-flash {
-            animation: completionFlash 1s;
         }
         
         #app-container {
@@ -65,10 +37,23 @@
         /* Header */
         .header {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px 0;
-            position: relative;
-            z-index: 2;
+        }
+        
+        .clear-completed {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        
+        .clear-completed:hover {
+            background: #f5f5f5;
         }
         
         .menu-btn {
@@ -123,7 +108,35 @@
             margin: 10px 0;
             position: relative;
             background: white;
-            z-index: 1;
+            overflow: hidden;
+        }
+        
+        /* Priority backgrounds for task container */
+        .priority-high {
+            background-color: var(--high-priority);
+        }
+        
+        .priority-medium {
+            background-color: var(--medium-priority);
+        }
+        
+        .priority-low {
+            background-color: var(--low-priority);
+        }
+        
+        .priority-none {
+            background-color: var(--no-priority);
+        }
+        
+        /* Completion flash for task container */
+        @keyframes completionFlash {
+            0% { background-color: inherit; }
+            50% { background-color: var(--completion-flash); }
+            100% { background-color: inherit; }
+        }
+        
+        .completion-flash {
+            animation: completionFlash 1s;
         }
         
         /* Desktop Arrows */
@@ -188,22 +201,21 @@
         }
         
         .priority-high .priority-indicator {
-            background-color: #f44336;
+            background-color: #e53935;
         }
         
         .priority-medium .priority-indicator {
-            background-color: #ffc107;
+            background-color: #fdd835;
         }
         
         .priority-low .priority-indicator {
-            background-color: #2196f3;
+            background-color: #43a047;
         }
         
         /* Input */
         .input-container {
             position: relative;
             width: 100%;
-            z-index: 2;
         }
         
         #task-input {
@@ -234,7 +246,6 @@
             justify-content: center;
             gap: 10px;
             margin-top: 15px;
-            z-index: 2;
         }
         
         .priority-btn {
@@ -366,22 +377,38 @@
         }
         
         .high-priority {
-            background-color: #f44336;
+            background-color: #e53935;
         }
         
         .medium-priority {
-            background-color: #ffc107;
+            background-color: #fdd835;
         }
         
         .low-priority {
-            background-color: #2196f3;
+            background-color: #43a047;
+        }
+        
+        .delete-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .delete-btn:hover {
+            background: var(--delete-color);
         }
     </style>
 </head>
-<body class="priority-none">
+<body>
     <div id="app-container">
         <!-- Main View -->
         <div class="header">
+            <button class="clear-completed" id="clear-completed">Clear Completed</button>
             <div class="dropdown">
                 <button class="menu-btn" id="menu-btn">☰</button>
                 <div class="dropdown-content" id="dropdown-menu">
@@ -391,7 +418,7 @@
             </div>
         </div>
         
-        <div id="task-container">
+        <div id="task-container" class="priority-none">
             <button class="nav-arrow" id="arrow-left">←</button>
             <button class="nav-arrow" id="arrow-right">→</button>
             <div class="empty-state">No tasks yet! Add one below.</div>
@@ -404,9 +431,9 @@
         
         <div class="priority-selector" id="priority-selector">
             <button class="priority-btn none-btn active" data-priority="none"></button>
-            <button class="priority-btn" style="background: #f44336;" data-priority="high"></button>
-            <button class="priority-btn" style="background: #ffc107;" data-priority="medium"></button>
-            <button class="priority-btn" style="background: #2196f3;" data-priority="low"></button>
+            <button class="priority-btn" style="background: #e53935;" data-priority="high"></button>
+            <button class="priority-btn" style="background: #fdd835;" data-priority="medium"></button>
+            <button class="priority-btn" style="background: #43a047;" data-priority="low"></button>
         </div>
         
         <!-- Active Tasks View -->
@@ -448,7 +475,7 @@
         const arrowRight = document.getElementById('arrow-right');
         const prioritySelector = document.getElementById('priority-selector');
         const priorityBtns = document.querySelectorAll('.priority-btn');
-        const body = document.body;
+        const clearCompletedBtn = document.getElementById('clear-completed');
 
         // State
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -499,6 +526,9 @@
         arrowLeft.addEventListener('click', () => navigateTask('prev'));
         arrowRight.addEventListener('click', () => navigateTask('next'));
 
+        // Clear completed tasks
+        clearCompletedBtn.addEventListener('click', clearCompletedTasks);
+
         // Core Functions
         function addTask() {
             const taskText = taskInput.value.trim();
@@ -517,6 +547,20 @@
             }
         }
 
+        function clearCompletedTasks() {
+            tasks = tasks.filter(task => !task.done);
+            saveTasks();
+            renderCurrentTask();
+            renderTaskLists();
+        }
+
+        function deleteTask(taskToDelete) {
+            tasks = tasks.filter(task => task !== taskToDelete);
+            saveTasks();
+            renderCurrentTask();
+            renderTaskLists();
+        }
+
         function renderCurrentTask() {
             taskContainer.innerHTML = '';
             
@@ -524,13 +568,13 @@
             
             if (tasks.length === 0) {
                 taskContainer.innerHTML = '<div class="empty-state">No tasks yet! Add one below.</div>';
-                updateBodyPriority('none');
+                taskContainer.className = 'priority-none';
                 return;
             }
             
             if (activeTasks.length === 0) {
                 taskContainer.innerHTML = '<div class="empty-state">All tasks completed!</div>';
-                updateBodyPriority('none');
+                taskContainer.className = 'priority-none';
                 return;
             }
             
@@ -538,13 +582,13 @@
             currentIndex = currentIndex % activeTasks.length;
             const task = activeTasks[currentIndex];
             
-            // Update body class to reflect current task's priority
-            updateBodyPriority(task.priority);
+            // Update task container priority class
+            taskContainer.className = `priority-${task.priority}`;
             
             const taskContent = document.createElement('div');
             taskContent.className = 'task-content';
             
-            // Add priority indicator dot
+            // Add priority indicator dot if not 'none'
             if (task.priority !== 'none') {
                 const priorityDot = document.createElement('div');
                 priorityDot.className = 'priority-indicator';
@@ -562,10 +606,10 @@
             checkbox.addEventListener('change', () => {
                 task.done = true;
                 saveTasks();
-                // Flash the entire screen green
-                body.classList.add('completion-flash');
+                // Flash the task container green
+                taskContainer.classList.add('completion-flash');
                 setTimeout(() => {
-                    body.classList.remove('completion-flash');
+                    taskContainer.classList.remove('completion-flash');
                     renderCurrentTask();
                     renderTaskLists();
                 }, 1000);
@@ -582,13 +626,6 @@
             setupSwipeGestures(taskContent, activeTasks);
         }
 
-        function updateBodyPriority(priority) {
-            // Remove all priority classes
-            body.classList.remove('priority-high', 'priority-medium', 'priority-low', 'priority-none');
-            // Add the current priority class
-            body.classList.add(`priority-${priority}`);
-        }
-
         function renderTaskLists() {
             activeTasksList.innerHTML = '';
             completedTasksList.innerHTML = '';
@@ -600,36 +637,7 @@
                 activeTasksList.innerHTML = '<div class="empty-state">No active tasks</div>';
             } else {
                 activeTasks.forEach(task => {
-                    const li = document.createElement('li');
-                    li.className = 'task-item';
-                    
-                    // Add priority indicator if it exists
-                    if (task.priority !== 'none') {
-                        const priorityDot = document.createElement('div');
-                        priorityDot.className = `task-item-priority ${task.priority}-priority`;
-                        li.appendChild(priorityDot);
-                    }
-                    
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'task-item-checkbox';
-                    checkbox.checked = false;
-                    checkbox.addEventListener('change', () => {
-                        task.done = true;
-                        saveTasks();
-                        body.classList.add('completion-flash');
-                        setTimeout(() => {
-                            body.classList.remove('completion-flash');
-                            renderCurrentTask();
-                            renderTaskLists();
-                        }, 1000);
-                    });
-                    
-                    const text = document.createElement('span');
-                    text.textContent = task.text;
-                    
-                    li.appendChild(checkbox);
-                    li.appendChild(text);
+                    const li = createTaskListItem(task, false);
                     activeTasksList.appendChild(li);
                 });
             }
@@ -638,28 +646,50 @@
                 completedTasksList.innerHTML = '<div class="empty-state">No completed tasks</div>';
             } else {
                 completedTasks.forEach(task => {
-                    const li = document.createElement('li');
-                    li.className = 'task-item completed';
-                    
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'task-item-checkbox';
-                    checkbox.checked = true;
-                    checkbox.addEventListener('change', () => {
-                        task.done = false;
-                        saveTasks();
-                        renderCurrentTask();
-                        renderTaskLists();
-                    });
-                    
-                    const text = document.createElement('span');
-                    text.textContent = task.text;
-                    
-                    li.appendChild(checkbox);
-                    li.appendChild(text);
+                    const li = createTaskListItem(task, true);
                     completedTasksList.appendChild(li);
                 });
             }
+        }
+
+        function createTaskListItem(task, isCompleted) {
+            const li = document.createElement('li');
+            li.className = `task-item ${isCompleted ? 'completed' : ''}`;
+            
+            // Add priority indicator if it exists
+            if (task.priority !== 'none') {
+                const priorityDot = document.createElement('div');
+                priorityDot.className = `task-item-priority ${task.priority}-priority`;
+                li.appendChild(priorityDot);
+            }
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'task-item-checkbox';
+            checkbox.checked = isCompleted;
+            checkbox.addEventListener('change', () => {
+                task.done = !task.done;
+                saveTasks();
+                renderCurrentTask();
+                renderTaskLists();
+            });
+            
+            const text = document.createElement('span');
+            text.textContent = task.text;
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteTask(task);
+            });
+            
+            li.appendChild(checkbox);
+            li.appendChild(text);
+            li.appendChild(deleteBtn);
+            
+            return li;
         }
 
         function navigateTask(direction) {
