@@ -10,14 +10,22 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
             background: white;
             color: #333;
         }
-        #task-container {
+        #app-container {
             width: 100%;
-            height: calc(100vh - 80px);
+            max-width: 500px;
+            height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+        }
+        #task-container {
+            flex-grow: 1;
             position: relative;
             overflow: hidden;
             border: 1px solid #e0e0e0;
@@ -27,6 +35,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            margin-bottom: 20px;
         }
         .task-content {
             text-align: center;
@@ -36,6 +45,7 @@
             opacity: 1;
             transition: opacity 0.3s ease;
             width: 80%;
+            padding: 20px;
         }
         .task-content.fade-out {
             opacity: 0;
@@ -51,16 +61,13 @@
             accent-color: #ff6b6b;
         }
         .input-container {
-            position: fixed;
-            bottom: 20px;
-            width: 90%;
-            max-width: 500px;
-            display: flex;
-            justify-content: center;
+            width: 100%;
+            position: relative;
+            margin-top: auto;
         }
         #task-input {
             width: 100%;
-            padding: 12px 40px 12px 12px;
+            padding: 15px 50px 15px 20px;
             font-size: 18px;
             border: none;
             border-radius: 25px;
@@ -69,12 +76,12 @@
         }
         #add-btn {
             position: absolute;
-            right: 10px;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 24px;
             color: #ff6b6b;
             cursor: pointer;
             padding: 0;
@@ -83,8 +90,12 @@
         #add-btn:hover {
             transform: translateY(-50%) scale(1.1);
         }
-        .hidden {
-            display: none;
+        .empty-state {
+            padding: 20px;
+            color: #999;
+            text-align: center;
+            font-style: italic;
+            font-size: 20px;
         }
         
         /* Dropdown styles */
@@ -123,6 +134,7 @@
             opacity: 0;
             transition: all 0.2s;
             pointer-events: none;
+            margin-top: 10px;
         }
         .dropdown-content.show {
             transform: scale(1);
@@ -155,6 +167,7 @@
         .task-item-checkbox {
             margin-right: 12px;
             cursor: pointer;
+            accent-color: #ff6b6b;
         }
         .dropdown-header {
             padding: 8px 16px;
@@ -163,29 +176,28 @@
             border-bottom: 1px solid #eee;
             margin-bottom: 5px;
         }
-        .empty-state {
-            padding: 16px;
-            color: #999;
-            text-align: center;
-            font-style: italic;
-        }
     </style>
 </head>
 <body>
-    <div class="dropdown">
-        <button class="dropdown-btn">☰</button>
-        <div class="dropdown-content">
-            <div class="dropdown-header">Active Tasks</div>
-            <ul class="task-list" id="active-tasks"></ul>
-            <div class="dropdown-header">Completed Tasks</div>
-            <ul class="task-list" id="completed-tasks"></ul>
+    <div id="app-container">
+        <div class="dropdown">
+            <button class="dropdown-btn">☰</button>
+            <div class="dropdown-content">
+                <div class="dropdown-header">Active Tasks</div>
+                <ul class="task-list" id="active-tasks"></ul>
+                <div class="dropdown-header">Completed Tasks</div>
+                <ul class="task-list" id="completed-tasks"></ul>
+            </div>
         </div>
-    </div>
-    
-    <div id="task-container"></div>
-    <div class="input-container">
-        <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
-        <button id="add-btn">+</button>
+        
+        <div id="task-container">
+            <div class="empty-state">No tasks yet! Add one below.</div>
+        </div>
+        
+        <div class="input-container">
+            <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
+            <button id="add-btn">+</button>
+        </div>
     </div>
 
     <script>
@@ -214,9 +226,13 @@
             if (e.key === 'Enter') addTask();
         });
         
-        dropdownBtn.addEventListener('click', toggleDropdown);
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+        
         document.addEventListener('click', (e) => {
-            if (isDropdownOpen && !dropdownContent.contains(e.target) {
+            if (isDropdownOpen && !dropdownContent.contains(e.target) && !dropdownBtn.contains(e.target)) {
                 toggleDropdown();
             }
         });
@@ -256,6 +272,7 @@
                 saveTasks();
                 renderCurrentTask();
                 renderTaskLists();
+                taskInput.focus();
             }
         }
 
@@ -263,12 +280,14 @@
             taskContainer.innerHTML = '';
 
             const activeTasks = tasks.filter(task => !task.done);
+            
+            if (tasks.length === 0) {
+                taskContainer.innerHTML = '<div class="empty-state">No tasks yet! Add one below.</div>';
+                return;
+            }
+            
             if (activeTasks.length === 0) {
-                taskContainer.innerHTML = `
-                    <div class="task-content">
-                        <span class="task-text">No tasks left!</span>
-                    </div>
-                `;
+                taskContainer.innerHTML = '<div class="empty-state">All tasks completed!</div>';
                 return;
             }
 
@@ -287,13 +306,16 @@
             checkbox.className = 'checkbox';
             checkbox.checked = task.done;
             checkbox.addEventListener('change', () => {
-                tasks.find(t => t.text === task.text).done = true;
-                content.classList.add('fade-out');
-                setTimeout(() => {
-                    saveTasks();
-                    renderCurrentTask();
-                    renderTaskLists();
-                }, 300);
+                const taskIndex = tasks.findIndex(t => t.text === task.text);
+                if (taskIndex !== -1) {
+                    tasks[taskIndex].done = true;
+                    content.classList.add('fade-out');
+                    setTimeout(() => {
+                        saveTasks();
+                        renderCurrentTask();
+                        renderTaskLists();
+                    }, 300);
+                }
             });
 
             content.appendChild(textSpan);
@@ -311,7 +333,7 @@
             const completedTasks = tasks.filter(task => task.done);
 
             if (activeTasks.length === 0) {
-                activeTasksList.innerHTML = '<div class="empty-state">No active tasks</div>';
+                activeTasksList.innerHTML = '<li class="task-item empty">No active tasks</li>';
             } else {
                 activeTasks.forEach((task, index) => {
                     const li = createTaskListItem(task, index, false);
@@ -320,7 +342,7 @@
             }
 
             if (completedTasks.length === 0) {
-                completedTasksList.innerHTML = '<div class="empty-state">No completed tasks</div>';
+                completedTasksList.innerHTML = '<li class="task-item empty">No completed tasks</li>';
             } else {
                 completedTasks.forEach((task, index) => {
                     const li = createTaskListItem(task, index, true);
@@ -337,7 +359,8 @@
             checkbox.type = 'checkbox';
             checkbox.className = 'task-item-checkbox';
             checkbox.checked = isCompleted;
-            checkbox.addEventListener('change', () => {
+            checkbox.addEventListener('change', (e) => {
+                e.stopPropagation();
                 task.done = !task.done;
                 saveTasks();
                 renderCurrentTask();
@@ -351,11 +374,13 @@
             li.appendChild(textSpan);
             
             if (!isCompleted) {
-                li.addEventListener('click', () => {
-                    currentIndex = index;
-                    renderCurrentTask();
-                    renderTaskLists();
-                    toggleDropdown();
+                li.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        currentIndex = index;
+                        renderCurrentTask();
+                        renderTaskLists();
+                        toggleDropdown();
+                    }
                 });
             }
 
@@ -372,7 +397,7 @@
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (diffX < -50) { // Swipe left: next task
+                if (diffX < -50 && activeTasks.length > 1) { // Swipe left: next task
                     previousIndex = currentIndex;
                     content.classList.add('fade-out');
                     setTimeout(() => {
@@ -395,6 +420,7 @@
         function toggleDropdown() {
             isDropdownOpen = !isDropdownOpen;
             dropdownContent.classList.toggle('show', isDropdownOpen);
+            dropdownBtn.style.backgroundColor = isDropdownOpen ? '#f0f0f0' : 'transparent';
         }
     </script>
 </body>
