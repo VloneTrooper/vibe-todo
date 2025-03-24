@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vibe To-Do</title>
     <style>
+        :root {
+            --high-priority: #ffebee; /* Light red */
+            --medium-priority: #fff8e1; /* Light yellow */
+            --low-priority: #e3f2fd; /* Light blue */
+            --completion-flash: #e8f5e9; /* Light green */
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             margin: 0;
@@ -13,7 +20,7 @@
             color: #333;
             height: 100vh;
             box-sizing: border-box;
-            touch-action: pan-y; /* Better swipe handling */
+            touch-action: pan-y;
         }
         
         #app-container {
@@ -83,9 +90,34 @@
             border-radius: 20px;
             margin: 10px 0;
             position: relative;
+            transition: background-color 0.3s;
         }
         
-        /* Desktop Arrows */
+        /* Priority Backgrounds */
+        .priority-high {
+            background-color: var(--high-priority);
+        }
+        
+        .priority-medium {
+            background-color: var(--medium-priority);
+        }
+        
+        .priority-low {
+            background-color: var(--low-priority);
+        }
+        
+        /* Completion Flash Animation */
+        @keyframes completionFlash {
+            0% { background-color: inherit; }
+            50% { background-color: var(--completion-flash); }
+            100% { background-color: inherit; }
+        }
+        
+        .completion-flash {
+            animation: completionFlash 1s;
+        }
+        
+        /* Desktop Arrows - Now visible */
         .nav-arrow {
             position: absolute;
             top: 50%;
@@ -97,7 +129,6 @@
             color: rgba(0,0,0,0.3);
             z-index: 5;
             transition: color 0.2s;
-            display: none; /* Hidden by default */
         }
         
         .nav-arrow:hover {
@@ -110,12 +141,6 @@
         
         #arrow-right {
             right: 15px;
-        }
-        
-        @media (min-width: 768px) {
-            .nav-arrow {
-                display: block;
-            }
         }
         
         .task-content {
@@ -141,6 +166,28 @@
             color: #999;
             font-style: italic;
             text-align: center;
+        }
+        
+        /* Priority Indicator */
+        .priority-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .priority-high .priority-indicator {
+            background-color: #f44336;
+        }
+        
+        .priority-medium .priority-indicator {
+            background-color: #ffc107;
+        }
+        
+        .priority-low .priority-indicator {
+            background-color: #2196f3;
         }
         
         /* Input */
@@ -171,6 +218,35 @@
             cursor: pointer;
         }
         
+        /* Priority Selection */
+        .priority-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .priority-btn {
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .priority-btn:hover {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        
+        .priority-btn.active {
+            opacity: 1;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+        }
+        
         /* Task List Views */
         .list-view {
             position: fixed;
@@ -185,10 +261,9 @@
             transition: transform 0.3s ease;
             z-index: 20;
             overflow-y: auto;
-            -webkit-overflow-scrolling: touch; /* Smooth mobile scrolling */
+            -webkit-overflow-scrolling: touch;
         }
         
-        /* Custom scrollbar */
         .list-view::-webkit-scrollbar {
             width: 6px;
         }
@@ -233,6 +308,7 @@
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
+            position: relative;
         }
         
         .task-item-checkbox {
@@ -244,6 +320,25 @@
         .task-item.completed {
             color: #999;
             text-decoration: line-through;
+        }
+        
+        .task-item-priority {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .high-priority {
+            background-color: #f44336;
+        }
+        
+        .medium-priority {
+            background-color: #ffc107;
+        }
+        
+        .low-priority {
+            background-color: #2196f3;
         }
     </style>
 </head>
@@ -269,6 +364,12 @@
         <div class="input-container">
             <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
             <button id="add-btn">+</button>
+        </div>
+        
+        <div class="priority-selector" id="priority-selector">
+            <button class="priority-btn" style="background: #f44336;" data-priority="high"></button>
+            <button class="priority-btn" style="background: #ffc107;" data-priority="medium"></button>
+            <button class="priority-btn active" style="background: #2196f3;" data-priority="low"></button>
         </div>
         
         <!-- Active Tasks View -->
@@ -308,17 +409,20 @@
         const backBtns = document.querySelectorAll('.back-btn');
         const arrowLeft = document.getElementById('arrow-left');
         const arrowRight = document.getElementById('arrow-right');
+        const prioritySelector = document.getElementById('priority-selector');
+        const priorityBtns = document.querySelectorAll('.priority-btn');
 
         // State
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentIndex = 0;
-        let previousIndex = null;
         let isDropdownOpen = false;
         let taskHistory = [];
+        let currentPriority = 'low'; // Default priority
 
         // Initialize
         renderCurrentTask();
         renderTaskLists();
+        setupPrioritySelector();
 
         // Event Listeners
         addBtn.addEventListener('click', addTask);
@@ -364,11 +468,13 @@
                 tasks.push({
                     text: taskText,
                     done: false,
+                    priority: currentPriority,
                     createdAt: new Date().toISOString()
                 });
                 saveTasks();
                 taskInput.value = '';
                 renderCurrentTask();
+                renderTaskLists();
                 taskInput.focus();
             }
         }
@@ -393,7 +499,12 @@
             const task = activeTasks[currentIndex];
             
             const taskContent = document.createElement('div');
-            taskContent.className = 'task-content';
+            taskContent.className = `task-content priority-${task.priority}`;
+            
+            // Add priority indicator dot
+            const priorityDot = document.createElement('div');
+            priorityDot.className = 'priority-indicator';
+            taskContent.appendChild(priorityDot);
             
             const textElement = document.createElement('div');
             textElement.className = 'task-text';
@@ -406,13 +517,20 @@
             checkbox.addEventListener('change', () => {
                 task.done = true;
                 saveTasks();
-                renderCurrentTask();
-                renderTaskLists();
+                taskContainer.classList.add('completion-flash');
+                setTimeout(() => {
+                    renderCurrentTask();
+                    renderTaskLists();
+                }, 300);
             });
             
             taskContent.appendChild(textElement);
             taskContent.appendChild(checkbox);
             taskContainer.insertBefore(taskContent, taskContainer.firstChild);
+            
+            // Add arrows
+            taskContainer.appendChild(arrowLeft);
+            taskContainer.appendChild(arrowRight);
             
             setupSwipeGestures(taskContent, activeTasks);
         }
@@ -430,6 +548,11 @@
                 activeTasks.forEach(task => {
                     const li = document.createElement('li');
                     li.className = 'task-item';
+                    
+                    // Add priority indicator
+                    const priorityDot = document.createElement('div');
+                    priorityDot.className = `task-item-priority ${task.priority}-priority`;
+                    li.appendChild(priorityDot);
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
@@ -519,6 +642,16 @@
                     navigateTask('prev');
                 }
             }, { passive: true });
+        }
+
+        function setupPrioritySelector() {
+            priorityBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    priorityBtns.forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentPriority = e.target.dataset.priority;
+                });
+            });
         }
 
         function showListView(view) {
