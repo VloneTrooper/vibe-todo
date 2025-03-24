@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe To-Do</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f0f0;
+        }
+        #task-input {
+            margin: 20px;
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+        }
+        #add-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #task-container {
+            width: 90%;
+            height: 60%;
+            position: relative;
+            overflow: hidden;
+        }
+        .task-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+        .hidden {
+            display: none;
+        }
+        button:not(.hidden) {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <input id="task-input" type="text" placeholder="Add a task...">
+    <button id="add-btn">Add</button>
+    <div id="task-container"></div>
+    <button id="complete-btn" class="hidden">Complete</button>
+    <button id="skip-btn" class="hidden">Skip</button>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentIndex = 0;
+
+        const taskInput = document.getElementById('task-input');
+        const addBtn = document.getElementById('add-btn');
+        const taskContainer = document.getElementById('task-container');
+        const completeBtn = document.getElementById('complete-btn');
+        const skipBtn = document.getElementById('skip-btn');
+
+        // Load tasks on start
+        renderTasks();
+
+        // Add a task
+        addBtn.addEventListener('click', () => {
+            const taskText = taskInput.value.trim();
+            if (taskText) {
+                tasks.push({ text: taskText, done: false });
+                taskInput.value = '';
+                saveTasks();
+                renderTasks();
+            }
+        });
+
+        // Save tasks to localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Render the current task
+        function renderTasks() {
+            taskContainer.innerHTML = '';
+            completeBtn.classList.add('hidden');
+            skipBtn.classList.add('hidden');
+
+            if (tasks.length === 0) {
+                taskContainer.innerHTML = '<div class="task-card">No tasks left!</div>';
+                return;
+            }
+
+            const activeTasks = tasks.filter(task => !task.done);
+            if (activeTasks.length === 0) {
+                taskContainer.innerHTML = '<div class="task-card">No tasks left!</div>';
+                return;
+            }
+
+            currentIndex = Math.min(currentIndex, activeTasks.length - 1);
+            const task = activeTasks[currentIndex];
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.innerText = task.text;
+            taskContainer.appendChild(card);
+
+            // Show buttons for PC testing
+            completeBtn.classList.remove('hidden');
+            skipBtn.classList.remove('hidden');
+
+            // Button actions
+            completeBtn.onclick = () => {
+                tasks[tasks.indexOf(task)].done = true;
+                saveTasks();
+                renderTasks();
+            };
+            skipBtn.onclick = () => {
+                currentIndex = (currentIndex + 1) % activeTasks.length;
+                renderTasks();
+            };
+
+            // Swipe handling for mobile
+            let startX = 0;
+            card.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+            });
+            card.addEventListener('touchend', (e) => {
+                const endX = e.changedTouches[0].clientX;
+                const diffX = endX - startX;
+                if (diffX > 30) { // Swipe right: complete
+                    tasks[tasks.indexOf(task)].done = true;
+                    saveTasks();
+                    renderTasks();
+                } else if (diffX < -30) { // Swipe left: skip
+                    currentIndex = (currentIndex + 1) % activeTasks.length;
+                    renderTasks();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
