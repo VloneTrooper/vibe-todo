@@ -118,11 +118,15 @@
             font-size: 20px;
         }
         
-        /* Menu button */
-        .menu-btn {
+        /* Dropdown menu */
+        .dropdown {
             position: absolute;
             top: 20px;
             right: 20px;
+            z-index: 10;
+        }
+        
+        .dropdown-btn {
             background: none;
             border: none;
             font-size: 24px;
@@ -130,7 +134,46 @@
             color: #666;
             padding: 5px 10px;
             border-radius: 50%;
-            z-index: 10;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .dropdown-content {
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 10px 0;
+            transform: scale(0.95);
+            transform-origin: top right;
+            opacity: 0;
+            transition: all 0.2s;
+            pointer-events: none;
+            margin-top: 10px;
+        }
+        
+        .dropdown-content.show {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .dropdown-link {
+            display: block;
+            padding: 12px 16px;
+            color: #333;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        
+        .dropdown-link:hover {
+            background: #f8f8f8;
         }
         
         /* Task List Views */
@@ -220,7 +263,13 @@
 <body>
     <!-- Main View -->
     <div id="main-view" class="view-container view-center">
-        <button class="menu-btn" id="menu-btn">☰</button>
+        <div class="dropdown">
+            <button class="dropdown-btn" id="menu-btn">☰</button>
+            <div class="dropdown-content" id="dropdown-menu">
+                <a href="#" class="dropdown-link" id="active-link">Active Tasks</a>
+                <a href="#" class="dropdown-link" id="completed-link">Completed Tasks</a>
+            </div>
+        </div>
         
         <div id="task-container">
             <div class="empty-state">No tasks yet! Add one below.</div>
@@ -266,6 +315,9 @@
         const addBtn = document.getElementById('add-btn');
         const taskContainer = document.getElementById('task-container');
         const menuBtn = document.getElementById('menu-btn');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const activeLink = document.getElementById('active-link');
+        const completedLink = document.getElementById('completed-link');
         
         // Views
         const mainView = document.getElementById('main-view');
@@ -282,6 +334,9 @@
         // State
         let tasks = loadTasks();
         let currentIndex = 0;
+        let previousIndex = null;
+        let isDropdownOpen = false;
+        let taskHistory = []; // Track task navigation history
 
         // Initialize
         renderCurrentTask();
@@ -293,8 +348,27 @@
             if (e.key === 'Enter') addTask();
         });
         
-        menuBtn.addEventListener('click', () => {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+        
+        activeLink.addEventListener('click', (e) => {
+            e.preventDefault();
             navigateToView('active');
+            toggleDropdown();
+        });
+        
+        completedLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToView('completed');
+            toggleDropdown();
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (isDropdownOpen && !dropdownMenu.contains(e.target) {
+                toggleDropdown();
+            }
         });
         
         backBtns.forEach(btn => {
@@ -357,8 +431,11 @@
                 return;
             }
 
-            // Ensure currentIndex is within bounds
-            currentIndex = (currentIndex % activeTasks.length + activeTasks.length) % activeTasks.length;
+            // If no current index set or it's invalid, start at 0
+            if (currentIndex === null || currentIndex >= activeTasks.length || currentIndex < 0) {
+                currentIndex = 0;
+            }
+            
             const task = activeTasks[currentIndex];
             
             const content = document.createElement('div');
@@ -452,18 +529,37 @@
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (activeTasks.length === 0) return;
+                if (activeTasks.length <= 1) return;
                 
-                if (diffX < -50) { // Swipe left: next task
+                if (diffX < -50) { // Swipe left: random next task
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        currentIndex = (currentIndex + 1) % activeTasks.length;
+                        // Store current index before changing
+                        previousIndex = currentIndex;
+                        
+                        // Get random index different from current
+                        let newIndex;
+                        do {
+                            newIndex = Math.floor(Math.random() * activeTasks.length);
+                        } while (newIndex === currentIndex && activeTasks.length > 1);
+                        
+                        currentIndex = newIndex;
+                        taskHistory.push(currentIndex); // Add to history
                         renderCurrentTask();
                     }, 300);
-                } else if (diffX > 50) { // Swipe right: previous task
+                } else if (diffX > 50 && previousIndex !== null) { // Swipe right: go back
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        currentIndex = (currentIndex - 1 + activeTasks.length) % activeTasks.length;
+                        if (taskHistory.length > 0) {
+                            taskHistory.pop(); // Remove current from history
+                            if (taskHistory.length > 0) {
+                                currentIndex = taskHistory[taskHistory.length - 1];
+                            } else {
+                                currentIndex = previousIndex;
+                            }
+                        } else {
+                            currentIndex = previousIndex;
+                        }
                         renderCurrentTask();
                     }, 300);
                 }
@@ -491,6 +587,12 @@
                 completedView.classList.add('view-center');
                 renderTaskLists();
             }
+        }
+
+        function toggleDropdown() {
+            isDropdownOpen = !isDropdownOpen;
+            dropdownMenu.classList.toggle('show', isDropdownOpen);
+            menuBtn.style.backgroundColor = isDropdownOpen ? '#f0f0f0' : 'transparent';
         }
     </script>
 </body>
