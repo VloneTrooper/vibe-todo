@@ -118,15 +118,11 @@
             font-size: 20px;
         }
         
-        /* Dropdown menu */
-        .dropdown {
+        /* Menu button */
+        .menu-btn {
             position: absolute;
             top: 20px;
             right: 20px;
-            z-index: 10;
-        }
-        
-        .dropdown-btn {
             background: none;
             border: none;
             font-size: 24px;
@@ -134,17 +130,14 @@
             color: #666;
             padding: 5px 10px;
             border-radius: 50%;
-            transition: all 0.2s;
+            z-index: 10;
         }
         
-        .dropdown-btn:hover {
-            background: #f0f0f0;
-            color: #333;
-        }
-        
+        /* Dropdown menu */
         .dropdown-content {
             position: absolute;
-            right: 0;
+            right: 20px;
+            top: 60px;
             background: white;
             min-width: 200px;
             border-radius: 10px;
@@ -155,7 +148,7 @@
             opacity: 0;
             transition: all 0.2s;
             pointer-events: none;
-            margin-top: 10px;
+            z-index: 10;
         }
         
         .dropdown-content.show {
@@ -263,12 +256,10 @@
 <body>
     <!-- Main View -->
     <div id="main-view" class="view-container view-center">
-        <div class="dropdown">
-            <button class="dropdown-btn" id="menu-btn">☰</button>
-            <div class="dropdown-content" id="dropdown-menu">
-                <a href="#" class="dropdown-link" id="active-link">Active Tasks</a>
-                <a href="#" class="dropdown-link" id="completed-link">Completed Tasks</a>
-            </div>
+        <button class="menu-btn" id="menu-btn">☰</button>
+        <div class="dropdown-content" id="dropdown-menu">
+            <a href="#" class="dropdown-link" id="active-link">Active Tasks</a>
+            <a href="#" class="dropdown-link" id="completed-link">Completed Tasks</a>
         </div>
         
         <div id="task-container">
@@ -336,7 +327,7 @@
         let currentIndex = 0;
         let previousIndex = null;
         let isDropdownOpen = false;
-        let taskHistory = []; // Track task navigation history
+        let taskHistory = [];
 
         // Initialize
         renderCurrentTask();
@@ -377,32 +368,9 @@
             });
         });
 
-        // Functions
-        function loadTasks() {
-            try {
-                const savedTasks = localStorage.getItem('tasks');
-                return savedTasks ? JSON.parse(savedTasks) : [];
-            } catch (e) {
-                console.error('Failed to load tasks', e);
-                return [];
-            }
-        }
-
-        function saveTasks() {
-            try {
-                localStorage.setItem('tasks', JSON.stringify(tasks));
-                renderTaskLists();
-            } catch (e) {
-                console.error('Failed to save tasks', e);
-            }
-        }
-
-        function sanitizeInput(text) {
-            return text.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
-
+        // Core Functions
         function addTask() {
-            const taskText = sanitizeInput(taskInput.value);
+            const taskText = taskInput.value.trim();
             if (taskText) {
                 tasks.push({ 
                     text: taskText, 
@@ -431,8 +399,8 @@
                 return;
             }
 
-            // If no current index set or it's invalid, start at 0
-            if (currentIndex === null || currentIndex >= activeTasks.length || currentIndex < 0) {
+            // Initialize currentIndex if needed
+            if (currentIndex >= activeTasks.length || currentIndex < 0) {
                 currentIndex = 0;
             }
             
@@ -450,15 +418,12 @@
             checkbox.className = 'checkbox';
             checkbox.checked = task.done;
             checkbox.addEventListener('change', () => {
-                const taskIndex = tasks.findIndex(t => t.text === task.text);
-                if (taskIndex !== -1) {
-                    tasks[taskIndex].done = true;
-                    content.classList.add('fade-out');
-                    setTimeout(() => {
-                        saveTasks();
-                        renderCurrentTask();
-                    }, 300);
-                }
+                task.done = true;
+                saveTasks();
+                content.classList.add('fade-out');
+                setTimeout(() => {
+                    renderCurrentTask();
+                }, 300);
             });
 
             content.appendChild(textSpan);
@@ -526,40 +491,28 @@
             }, { passive: true });
             
             taskContainer.addEventListener('touchend', (e) => {
+                if (activeTasks.length <= 1) return;
+                
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (activeTasks.length <= 1) return;
-                
-                if (diffX < -50) { // Swipe left: random next task
+                if (diffX < -50) { // Swipe left: random task
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        // Store current index before changing
                         previousIndex = currentIndex;
-                        
-                        // Get random index different from current
                         let newIndex;
                         do {
                             newIndex = Math.floor(Math.random() * activeTasks.length);
                         } while (newIndex === currentIndex && activeTasks.length > 1);
                         
                         currentIndex = newIndex;
-                        taskHistory.push(currentIndex); // Add to history
+                        taskHistory.push(currentIndex);
                         renderCurrentTask();
                     }, 300);
-                } else if (diffX > 50 && previousIndex !== null) { // Swipe right: go back
+                } else if (diffX > 50 && taskHistory.length > 0) { // Swipe right: previous task
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        if (taskHistory.length > 0) {
-                            taskHistory.pop(); // Remove current from history
-                            if (taskHistory.length > 0) {
-                                currentIndex = taskHistory[taskHistory.length - 1];
-                            } else {
-                                currentIndex = previousIndex;
-                            }
-                        } else {
-                            currentIndex = previousIndex;
-                        }
+                        currentIndex = taskHistory.pop() || 0;
                         renderCurrentTask();
                     }, 300);
                 }
@@ -567,7 +520,7 @@
         }
 
         function navigateToView(viewName) {
-            // Hide all views first
+            // Reset all views
             mainView.classList.remove('view-center', 'view-left', 'view-right');
             activeView.classList.remove('view-center', 'view-left', 'view-right');
             completedView.classList.remove('view-center', 'view-left', 'view-right');
@@ -579,11 +532,9 @@
             } else if (viewName === 'active') {
                 mainView.classList.add('view-left');
                 activeView.classList.add('view-center');
-                completedView.classList.add('view-right');
                 renderTaskLists();
             } else if (viewName === 'completed') {
                 mainView.classList.add('view-left');
-                activeView.classList.add('view-left');
                 completedView.classList.add('view-center');
                 renderTaskLists();
             }
@@ -592,7 +543,24 @@
         function toggleDropdown() {
             isDropdownOpen = !isDropdownOpen;
             dropdownMenu.classList.toggle('show', isDropdownOpen);
-            menuBtn.style.backgroundColor = isDropdownOpen ? '#f0f0f0' : 'transparent';
+        }
+
+        function loadTasks() {
+            try {
+                const savedTasks = localStorage.getItem('tasks');
+                return savedTasks ? JSON.parse(savedTasks) : [];
+            } catch (e) {
+                console.error('Failed to load tasks', e);
+                return [];
+            }
+        }
+
+        function saveTasks() {
+            try {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            } catch (e) {
+                console.error('Failed to save tasks', e);
+            }
         }
     </script>
 </body>
