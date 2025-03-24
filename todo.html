@@ -7,41 +7,49 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 0;
             background: white;
             color: #333;
+            height: 100vh;
+            overflow: hidden;
         }
-        #app-container {
+        
+        /* View container */
+        .view-container {
+            position: absolute;
             width: 100%;
-            max-width: 500px;
-            height: calc(100vh - 100px);
+            height: 100%;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Main View */
+        #main-view {
             display: flex;
             flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            box-sizing: border-box;
         }
+        
+        /* Task container */
         #task-container {
             flex-grow: 1;
             position: relative;
             overflow: hidden;
             border: 1px solid #e0e0e0;
             border-radius: 25px;
-            background: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
         }
+        
         .task-content {
             text-align: center;
             font-size: 24px;
             font-weight: 500;
-            color: #333;
             opacity: 1;
             transition: opacity 0.3s ease;
             width: 80%;
@@ -50,13 +58,16 @@
             flex-direction: column;
             align-items: center;
         }
+        
         .task-content.fade-out {
             opacity: 0;
         }
+        
         .task-text {
             margin-bottom: 20px;
             word-break: break-word;
         }
+        
         .checkbox {
             width: 28px;
             height: 28px;
@@ -64,11 +75,13 @@
             accent-color: #ff6b6b;
             margin-top: 15px;
         }
+        
+        /* Input area */
         .input-container {
             width: 100%;
             position: relative;
-            margin-top: auto;
         }
+        
         #task-input {
             width: 100%;
             padding: 15px 50px 15px 20px;
@@ -78,6 +91,7 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             box-sizing: border-box;
         }
+        
         #add-btn {
             position: absolute;
             right: 15px;
@@ -91,9 +105,11 @@
             padding: 0;
             transition: transform 0.2s;
         }
+        
         #add-btn:hover {
             transform: translateY(-50%) scale(1.1);
         }
+        
         .empty-state {
             padding: 20px;
             color: #999;
@@ -102,14 +118,11 @@
             font-size: 20px;
         }
         
-        /* Dropdown styles */
-        .dropdown {
+        /* Menu button */
+        .menu-btn {
             position: absolute;
             top: 20px;
             right: 20px;
-            z-index: 10;
-        }
-        .dropdown-btn {
             background: none;
             border: none;
             font-size: 24px;
@@ -117,68 +130,29 @@
             color: #666;
             padding: 5px 10px;
             border-radius: 50%;
-            transition: all 0.2s;
-        }
-        .dropdown-btn:hover {
-            background: #f0f0f0;
-            color: #333;
-        }
-        .dropdown-content {
-            position: absolute;
-            right: 0;
-            background: white;
-            min-width: 250px;
-            max-height: 400px;
-            overflow-y: auto;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 10px 0;
-            transform: scale(0.95);
-            transform-origin: top right;
-            opacity: 0;
-            transition: all 0.2s;
-            pointer-events: none;
-            margin-top: 10px;
-        }
-        .dropdown-content.show {
-            transform: scale(1);
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .dropdown-link {
-            display: block;
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-        .dropdown-link:hover {
-            background: #f8f8f8;
-        }
-        .dropdown-link.active {
-            background: #f0f0f0;
-            font-weight: 500;
-        }
-        .dropdown-header {
-            padding: 8px 16px;
-            font-size: 14px;
-            color: #666;
-            border-bottom: 1px solid #eee;
-            margin-bottom: 5px;
+            z-index: 10;
         }
         
-        /* Page styles */
+        /* Task List Views */
+        .list-view {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 20px;
             border-bottom: 1px solid #eee;
         }
+        
         .page-title {
             font-size: 20px;
             font-weight: 500;
         }
+        
         .back-btn {
             background: none;
             border: none;
@@ -186,82 +160,102 @@
             cursor: pointer;
             color: #666;
         }
-        .task-list-page {
+        
+        .task-list-container {
+            flex-grow: 1;
+            overflow-y: auto;
             padding: 15px;
         }
+        
         .task-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+        
         .task-item {
             padding: 15px;
             display: flex;
             align-items: center;
             border-bottom: 1px solid #f0f0f0;
         }
+        
         .task-item:last-child {
             border-bottom: none;
         }
+        
         .task-item-checkbox {
             margin-right: 15px;
             cursor: pointer;
             accent-color: #ff6b6b;
         }
+        
         .task-item-text {
             flex-grow: 1;
         }
+        
         .task-item.completed .task-item-text {
             color: #999;
             text-decoration: line-through;
         }
+        
+        /* View transitions */
+        .view-left {
+            transform: translateX(-100%);
+        }
+        
+        .view-right {
+            transform: translateX(100%);
+        }
+        
+        .view-center {
+            transform: translateX(0);
+        }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div id="app-container">
-        <!-- Main View -->
-        <div id="main-view">
-            <div class="dropdown">
-                <button class="dropdown-btn">☰</button>
-                <div class="dropdown-content">
-                    <a href="#" class="dropdown-link" id="home-link">Home</a>
-                    <div class="dropdown-header">Tasks</div>
-                    <a href="#active" class="dropdown-link" id="active-link">Active Tasks</a>
-                    <a href="#completed" class="dropdown-link" id="completed-link">Completed Tasks</a>
-                </div>
-            </div>
-            
-            <div id="task-container">
-                <div class="empty-state">No tasks yet! Add one below.</div>
-            </div>
-            
-            <div class="input-container">
-                <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
-                <button id="add-btn">+</button>
-            </div>
+    <!-- Main View -->
+    <div id="main-view" class="view-container view-center">
+        <button class="menu-btn" id="menu-btn">☰</button>
+        
+        <div id="task-container">
+            <div class="empty-state">No tasks yet! Add one below.</div>
         </div>
         
-        <!-- Active Tasks Page -->
-        <div id="active-view" class="hidden">
+        <div class="input-container">
+            <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
+            <button id="add-btn">+</button>
+        </div>
+    </div>
+    
+    <!-- Active Tasks View -->
+    <div id="active-view" class="view-container view-right">
+        <div class="list-view">
             <div class="page-header">
                 <button class="back-btn">←</button>
                 <div class="page-title">Active Tasks</div>
-                <div style="width: 24px;"></div> <!-- Spacer -->
+                <div style="width: 24px;"></div>
             </div>
-            <div class="task-list-page">
-                <ul class="task-list" id="active-page-tasks"></ul>
+            <div class="task-list-container">
+                <ul class="task-list" id="active-tasks"></ul>
             </div>
         </div>
-        
-        <!-- Completed Tasks Page -->
-        <div id="completed-view" class="hidden">
+    </div>
+    
+    <!-- Completed Tasks View -->
+    <div id="completed-view" class="view-container view-right">
+        <div class="list-view">
             <div class="page-header">
                 <button class="back-btn">←</button>
                 <div class="page-title">Completed Tasks</div>
-                <div style="width: 24px;"></div> <!-- Spacer -->
+                <div style="width: 24px;"></div>
             </div>
-            <div class="task-list-page">
-                <ul class="task-list" id="completed-page-tasks"></ul>
+            <div class="task-list-container">
+                <ul class="task-list" id="completed-tasks"></ul>
             </div>
         </div>
     </div>
@@ -271,30 +265,27 @@
         const taskInput = document.getElementById('task-input');
         const addBtn = document.getElementById('add-btn');
         const taskContainer = document.getElementById('task-container');
-        const dropdownBtn = document.querySelector('.dropdown-btn');
-        const dropdownContent = document.querySelector('.dropdown-content');
-        const homeLink = document.getElementById('home-link');
-        const activeLink = document.getElementById('active-link');
-        const completedLink = document.getElementById('completed-link');
+        const menuBtn = document.getElementById('menu-btn');
         
         // Views
         const mainView = document.getElementById('main-view');
         const activeView = document.getElementById('active-view');
         const completedView = document.getElementById('completed-view');
-        const backBtns = document.querySelectorAll('.back-btn');
         
         // Task lists
-        const activePageTasks = document.getElementById('active-page-tasks');
-        const completedPageTasks = document.getElementById('completed-page-tasks');
+        const activeTasksList = document.getElementById('active-tasks');
+        const completedTasksList = document.getElementById('completed-tasks');
+        
+        // Navigation buttons
+        const backBtns = document.querySelectorAll('.back-btn');
 
         // State
         let tasks = loadTasks();
         let currentIndex = 0;
-        let isDropdownOpen = false;
 
         // Initialize
         renderCurrentTask();
-        renderTaskPages();
+        renderTaskLists();
 
         // Event Listeners
         addBtn.addEventListener('click', addTask);
@@ -302,39 +293,13 @@
             if (e.key === 'Enter') addTask();
         });
         
-        dropdownBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleDropdown();
-        });
-        
-        document.addEventListener('click', (e) => {
-            if (isDropdownOpen && !dropdownContent.contains(e.target) && !dropdownBtn.contains(e.target)) {
-                toggleDropdown();
-            }
-        });
-
-        // Navigation
-        homeLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showView('main');
-            toggleDropdown();
-        });
-        
-        activeLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showView('active');
-            toggleDropdown();
-        });
-        
-        completedLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showView('completed');
-            toggleDropdown();
+        menuBtn.addEventListener('click', () => {
+            navigateToView('active');
         });
         
         backBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                showView('main');
+                navigateToView('main');
             });
         });
 
@@ -352,7 +317,7 @@
         function saveTasks() {
             try {
                 localStorage.setItem('tasks', JSON.stringify(tasks));
-                renderTaskPages();
+                renderTaskLists();
             } catch (e) {
                 console.error('Failed to save tasks', e);
             }
@@ -392,7 +357,7 @@
                 return;
             }
 
-            // Ensure currentIndex is within bounds and loops properly
+            // Ensure currentIndex is within bounds
             currentIndex = (currentIndex % activeTasks.length + activeTasks.length) % activeTasks.length;
             const task = activeTasks[currentIndex];
             
@@ -426,28 +391,28 @@
             setupSwipeGestures(content, activeTasks);
         }
 
-        function renderTaskPages() {
-            activePageTasks.innerHTML = '';
-            completedPageTasks.innerHTML = '';
+        function renderTaskLists() {
+            activeTasksList.innerHTML = '';
+            completedTasksList.innerHTML = '';
 
             const activeTasks = tasks.filter(task => !task.done);
             const completedTasks = tasks.filter(task => task.done);
 
             if (activeTasks.length === 0) {
-                activePageTasks.innerHTML = '<div class="empty-state">No active tasks</div>';
+                activeTasksList.innerHTML = '<div class="empty-state">No active tasks</div>';
             } else {
                 activeTasks.forEach((task) => {
                     const li = createTaskListItem(task, false);
-                    activePageTasks.appendChild(li);
+                    activeTasksList.appendChild(li);
                 });
             }
 
             if (completedTasks.length === 0) {
-                completedPageTasks.innerHTML = '<div class="empty-state">No completed tasks</div>';
+                completedTasksList.innerHTML = '<div class="empty-state">No completed tasks</div>';
             } else {
                 completedTasks.forEach((task) => {
                     const li = createTaskListItem(task, true);
-                    completedPageTasks.appendChild(li);
+                    completedTasksList.appendChild(li);
                 });
             }
         }
@@ -464,7 +429,7 @@
                 task.done = !task.done;
                 saveTasks();
                 renderCurrentTask();
-                renderTaskPages();
+                renderTaskLists();
             });
 
             const textSpan = document.createElement('span');
@@ -487,13 +452,15 @@
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (diffX < -50 && activeTasks.length > 0) { // Swipe left: next task
+                if (activeTasks.length === 0) return;
+                
+                if (diffX < -50) { // Swipe left: next task
                     content.classList.add('fade-out');
                     setTimeout(() => {
                         currentIndex = (currentIndex + 1) % activeTasks.length;
                         renderCurrentTask();
                     }, 300);
-                } else if (diffX > 50 && activeTasks.length > 0) { // Swipe right: previous task
+                } else if (diffX > 50) { // Swipe right: previous task
                     content.classList.add('fade-out');
                     setTimeout(() => {
                         currentIndex = (currentIndex - 1 + activeTasks.length) % activeTasks.length;
@@ -503,19 +470,26 @@
             }, { passive: true });
         }
 
-        function toggleDropdown() {
-            isDropdownOpen = !isDropdownOpen;
-            dropdownContent.classList.toggle('show', isDropdownOpen);
-            dropdownBtn.style.backgroundColor = isDropdownOpen ? '#f0f0f0' : 'transparent';
-        }
-
-        function showView(viewName) {
-            mainView.classList.toggle('hidden', viewName !== 'main');
-            activeView.classList.toggle('hidden', viewName !== 'active');
-            completedView.classList.toggle('hidden', viewName !== 'completed');
+        function navigateToView(viewName) {
+            // Hide all views first
+            mainView.classList.remove('view-center', 'view-left', 'view-right');
+            activeView.classList.remove('view-center', 'view-left', 'view-right');
+            completedView.classList.remove('view-center', 'view-left', 'view-right');
             
-            if (viewName === 'active' || viewName === 'completed') {
-                renderTaskPages();
+            if (viewName === 'main') {
+                mainView.classList.add('view-center');
+                activeView.classList.add('view-right');
+                completedView.classList.add('view-right');
+            } else if (viewName === 'active') {
+                mainView.classList.add('view-left');
+                activeView.classList.add('view-center');
+                completedView.classList.add('view-right');
+                renderTaskLists();
+            } else if (viewName === 'completed') {
+                mainView.classList.add('view-left');
+                activeView.classList.add('view-left');
+                completedView.classList.add('view-center');
+                renderTaskLists();
             }
         }
     </script>
