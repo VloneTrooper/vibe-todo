@@ -12,22 +12,34 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: #f0f0f0;
+            background: linear-gradient(135deg, #74ebd5, #acb6e5);
+        }
+        .input-container {
+            margin: 20px;
+            position: relative;
+            width: 80%;
+            max-width: 400px;
         }
         #task-input {
-            margin: 20px;
-            padding: 10px;
-            width: 80%;
-            font-size: 16px;
+            width: 100%;
+            padding: 12px 40px 12px 12px; /* Space for arrow */
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
         #add-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #4CAF50;
-            color: white;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
             border: none;
-            border-radius: 5px;
+            font-size: 20px;
+            color: #ff6b6b;
             cursor: pointer;
+            padding: 0;
         }
         #task-container {
             width: 90%;
@@ -40,35 +52,40 @@
             width: 100%;
             height: 100%;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 20px;
             font-size: 20px;
-            transition: transform 0.3s ease;
+            font-weight: bold;
+            color: #333;
+            transition: opacity 0.3s ease;
+        }
+        .task-card.completed {
+            opacity: 0;
+        }
+        .task-text {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
         }
         .hidden {
             display: none;
         }
-        button:not(.hidden) {
-            margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
-    <input id="task-input" type="text" placeholder="Add a task...">
-    <button id="add-btn">Add</button>
+    <div class="input-container">
+        <input id="task-input" type="text" placeholder="Add a task...">
+        <button id="add-btn">➜</button>
+    </div>
     <div id="task-container"></div>
-    <button id="complete-btn" class="hidden">Complete</button>
-    <button id="skip-btn" class="hidden">Skip</button>
 
     <script>
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -77,8 +94,6 @@
         const taskInput = document.getElementById('task-input');
         const addBtn = document.getElementById('add-btn');
         const taskContainer = document.getElementById('task-container');
-        const completeBtn = document.getElementById('complete-btn');
-        const skipBtn = document.getElementById('skip-btn');
 
         // Load tasks on start
         renderTasks();
@@ -94,6 +109,11 @@
             }
         });
 
+        // Allow Enter key to add task
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addBtn.click();
+        });
+
         // Save tasks to localStorage
         function saveTasks() {
             localStorage.setItem('tasks', JSON.stringify(tasks));
@@ -102,8 +122,6 @@
         // Render the current task
         function renderTasks() {
             taskContainer.innerHTML = '';
-            completeBtn.classList.add('hidden');
-            skipBtn.classList.add('hidden');
 
             if (tasks.length === 0) {
                 taskContainer.innerHTML = '<div class="task-card">No tasks left!</div>';
@@ -120,41 +138,27 @@
             const task = activeTasks[currentIndex];
             const card = document.createElement('div');
             card.className = 'task-card';
-            card.innerText = task.text;
-            taskContainer.appendChild(card);
 
-            // Show buttons for PC testing
-            completeBtn.classList.remove('hidden');
-            skipBtn.classList.remove('hidden');
+            const textSpan = document.createElement('span');
+            textSpan.className = 'task-text';
+            textSpan.innerText = task.text;
 
-            // Button actions
-            completeBtn.onclick = () => {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
+            checkbox.checked = task.done;
+            checkbox.addEventListener('change', () => {
                 tasks[tasks.indexOf(task)].done = true;
-                saveTasks();
-                renderTasks();
-            };
-            skipBtn.onclick = () => {
-                currentIndex = (currentIndex + 1) % activeTasks.length;
-                renderTasks();
-            };
-
-            // Swipe handling for mobile
-            let startX = 0;
-            card.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-            });
-            card.addEventListener('touchend', (e) => {
-                const endX = e.changedTouches[0].clientX;
-                const diffX = endX - startX;
-                if (diffX > 30) { // Swipe right: complete
-                    tasks[tasks.indexOf(task)].done = true;
+                card.classList.add('completed');
+                setTimeout(() => {
                     saveTasks();
                     renderTasks();
-                } else if (diffX < -30) { // Swipe left: skip
-                    currentIndex = (currentIndex + 1) % activeTasks.length;
-                    renderTasks();
-                }
+                }, 300); // Fade out animation
             });
+
+            card.appendChild(textSpan);
+            card.appendChild(checkbox);
+            taskContainer.appendChild(card);
         }
     </script>
 </body>
