@@ -12,17 +12,16 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: white; /* Task background */
-            transition: opacity 0.3s ease;
+            background: white; /* Plain background */
         }
         #task-container {
             width: 100%;
             height: calc(100vh - 80px);
             position: relative;
             overflow: hidden;
-            border: 2px solid #333; /* Thin inner border */
+            border: 2px solid #333; /* Thin border */
             border-radius: 25px;
-            background: linear-gradient(135deg, #74ebd5, #acb6e5); /* Moved gradient here */
+            background: white; /* Match body */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -90,6 +89,7 @@
     <script>
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentIndex = 0;
+        let previousIndex = null; // Track last index for one-step-back
 
         const taskInput = document.getElementById('task-input');
         const addBtn = document.getElementById('add-btn');
@@ -168,16 +168,18 @@
             taskContainer.addEventListener('touchend', (e) => {
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
-                if (diffX > 50) { // Swipe right: next task
+                if (diffX < -50) { // Swipe left: next task
+                    previousIndex = currentIndex;
                     content.classList.add('fade-out');
                     setTimeout(() => {
                         currentIndex = (currentIndex + 1) % activeTasks.length;
                         renderTasks();
                     }, 300);
-                } else if (diffX < -50) { // Swipe left: previous task
+                } else if (diffX > 50 && previousIndex !== null && currentIndex !== previousIndex) { // Swipe right: one step back
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        currentIndex = (currentIndex - 1 + activeTasks.length) % activeTasks.length;
+                        currentIndex = previousIndex;
+                        previousIndex = null; // Reset after going back
                         renderTasks();
                     }, 300);
                 }
