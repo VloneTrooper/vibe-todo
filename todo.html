@@ -46,6 +46,9 @@
             transition: opacity 0.3s ease;
             width: 80%;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .task-content.fade-out {
             opacity: 0;
@@ -59,6 +62,7 @@
             height: 28px;
             cursor: pointer;
             accent-color: #ff6b6b;
+            margin-top: 15px;
         }
         .input-container {
             width: 100%;
@@ -141,33 +145,19 @@
             opacity: 1;
             pointer-events: auto;
         }
-        .task-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .task-item {
+        .dropdown-link {
+            display: block;
             padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
+            color: #333;
+            text-decoration: none;
             transition: background 0.2s;
         }
-        .task-item:hover {
+        .dropdown-link:hover {
             background: #f8f8f8;
         }
-        .task-item.active {
+        .dropdown-link.active {
             background: #f0f0f0;
             font-weight: 500;
-        }
-        .task-item.completed {
-            color: #999;
-            text-decoration: line-through;
-        }
-        .task-item-checkbox {
-            margin-right: 12px;
-            cursor: pointer;
-            accent-color: #ff6b6b;
         }
         .dropdown-header {
             padding: 8px 16px;
@@ -176,27 +166,103 @@
             border-bottom: 1px solid #eee;
             margin-bottom: 5px;
         }
+        
+        /* Page styles */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .page-title {
+            font-size: 20px;
+            font-weight: 500;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+        }
+        .task-list-page {
+            padding: 15px;
+        }
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .task-item {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-item-checkbox {
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #ff6b6b;
+        }
+        .task-item-text {
+            flex-grow: 1;
+        }
+        .task-item.completed .task-item-text {
+            color: #999;
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
     <div id="app-container">
-        <div class="dropdown">
-            <button class="dropdown-btn">☰</button>
-            <div class="dropdown-content">
-                <div class="dropdown-header">Active Tasks</div>
-                <ul class="task-list" id="active-tasks"></ul>
-                <div class="dropdown-header">Completed Tasks</div>
-                <ul class="task-list" id="completed-tasks"></ul>
+        <!-- Main View -->
+        <div id="main-view">
+            <div class="dropdown">
+                <button class="dropdown-btn">☰</button>
+                <div class="dropdown-content">
+                    <a href="#" class="dropdown-link" id="home-link">Home</a>
+                    <div class="dropdown-header">Tasks</div>
+                    <a href="#active" class="dropdown-link" id="active-link">Active Tasks</a>
+                    <a href="#completed" class="dropdown-link" id="completed-link">Completed Tasks</a>
+                </div>
+            </div>
+            
+            <div id="task-container">
+                <div class="empty-state">No tasks yet! Add one below.</div>
+            </div>
+            
+            <div class="input-container">
+                <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
+                <button id="add-btn">+</button>
             </div>
         </div>
         
-        <div id="task-container">
-            <div class="empty-state">No tasks yet! Add one below.</div>
+        <!-- Active Tasks Page -->
+        <div id="active-view" class="hidden">
+            <div class="page-header">
+                <button class="back-btn">←</button>
+                <div class="page-title">Active Tasks</div>
+                <div style="width: 24px;"></div> <!-- Spacer -->
+            </div>
+            <div class="task-list-page">
+                <ul class="task-list" id="active-page-tasks"></ul>
+            </div>
         </div>
         
-        <div class="input-container">
-            <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
-            <button id="add-btn">+</button>
+        <!-- Completed Tasks Page -->
+        <div id="completed-view" class="hidden">
+            <div class="page-header">
+                <button class="back-btn">←</button>
+                <div class="page-title">Completed Tasks</div>
+                <div style="width: 24px;"></div> <!-- Spacer -->
+            </div>
+            <div class="task-list-page">
+                <ul class="task-list" id="completed-page-tasks"></ul>
+            </div>
         </div>
     </div>
 
@@ -207,18 +273,28 @@
         const taskContainer = document.getElementById('task-container');
         const dropdownBtn = document.querySelector('.dropdown-btn');
         const dropdownContent = document.querySelector('.dropdown-content');
-        const activeTasksList = document.getElementById('active-tasks');
-        const completedTasksList = document.getElementById('completed-tasks');
+        const homeLink = document.getElementById('home-link');
+        const activeLink = document.getElementById('active-link');
+        const completedLink = document.getElementById('completed-link');
+        
+        // Views
+        const mainView = document.getElementById('main-view');
+        const activeView = document.getElementById('active-view');
+        const completedView = document.getElementById('completed-view');
+        const backBtns = document.querySelectorAll('.back-btn');
+        
+        // Task lists
+        const activePageTasks = document.getElementById('active-page-tasks');
+        const completedPageTasks = document.getElementById('completed-page-tasks');
 
         // State
         let tasks = loadTasks();
         let currentIndex = 0;
-        let previousIndex = null;
         let isDropdownOpen = false;
 
         // Initialize
         renderCurrentTask();
-        renderTaskLists();
+        renderTaskPages();
 
         // Event Listeners
         addBtn.addEventListener('click', addTask);
@@ -237,6 +313,31 @@
             }
         });
 
+        // Navigation
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('main');
+            toggleDropdown();
+        });
+        
+        activeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('active');
+            toggleDropdown();
+        });
+        
+        completedLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('completed');
+            toggleDropdown();
+        });
+        
+        backBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                showView('main');
+            });
+        });
+
         // Functions
         function loadTasks() {
             try {
@@ -251,6 +352,7 @@
         function saveTasks() {
             try {
                 localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTaskPages();
             } catch (e) {
                 console.error('Failed to save tasks', e);
             }
@@ -271,7 +373,6 @@
                 taskInput.value = '';
                 saveTasks();
                 renderCurrentTask();
-                renderTaskLists();
                 taskInput.focus();
             }
         }
@@ -291,7 +392,8 @@
                 return;
             }
 
-            currentIndex = Math.min(currentIndex, activeTasks.length - 1);
+            // Ensure currentIndex is within bounds and loops properly
+            currentIndex = (currentIndex % activeTasks.length + activeTasks.length) % activeTasks.length;
             const task = activeTasks[currentIndex];
             
             const content = document.createElement('div');
@@ -313,7 +415,6 @@
                     setTimeout(() => {
                         saveTasks();
                         renderCurrentTask();
-                        renderTaskLists();
                     }, 300);
                 }
             });
@@ -325,64 +426,53 @@
             setupSwipeGestures(content, activeTasks);
         }
 
-        function renderTaskLists() {
-            activeTasksList.innerHTML = '';
-            completedTasksList.innerHTML = '';
+        function renderTaskPages() {
+            activePageTasks.innerHTML = '';
+            completedPageTasks.innerHTML = '';
 
             const activeTasks = tasks.filter(task => !task.done);
             const completedTasks = tasks.filter(task => task.done);
 
             if (activeTasks.length === 0) {
-                activeTasksList.innerHTML = '<li class="task-item empty">No active tasks</li>';
+                activePageTasks.innerHTML = '<div class="empty-state">No active tasks</div>';
             } else {
-                activeTasks.forEach((task, index) => {
-                    const li = createTaskListItem(task, index, false);
-                    activeTasksList.appendChild(li);
+                activeTasks.forEach((task) => {
+                    const li = createTaskListItem(task, false);
+                    activePageTasks.appendChild(li);
                 });
             }
 
             if (completedTasks.length === 0) {
-                completedTasksList.innerHTML = '<li class="task-item empty">No completed tasks</li>';
+                completedPageTasks.innerHTML = '<div class="empty-state">No completed tasks</div>';
             } else {
-                completedTasks.forEach((task, index) => {
-                    const li = createTaskListItem(task, index, true);
-                    completedTasksList.appendChild(li);
+                completedTasks.forEach((task) => {
+                    const li = createTaskListItem(task, true);
+                    completedPageTasks.appendChild(li);
                 });
             }
         }
 
-        function createTaskListItem(task, index, isCompleted) {
+        function createTaskListItem(task, isCompleted) {
             const li = document.createElement('li');
-            li.className = `task-item ${isCompleted ? 'completed' : ''} ${index === currentIndex && !isCompleted ? 'active' : ''}`;
+            li.className = `task-item ${isCompleted ? 'completed' : ''}`;
             
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'task-item-checkbox';
             checkbox.checked = isCompleted;
-            checkbox.addEventListener('change', (e) => {
-                e.stopPropagation();
+            checkbox.addEventListener('change', () => {
                 task.done = !task.done;
                 saveTasks();
                 renderCurrentTask();
-                renderTaskLists();
+                renderTaskPages();
             });
 
             const textSpan = document.createElement('span');
+            textSpan.className = 'task-item-text';
             textSpan.textContent = task.text;
 
             li.appendChild(checkbox);
             li.appendChild(textSpan);
-            
-            if (!isCompleted) {
-                li.addEventListener('click', (e) => {
-                    if (e.target.tagName !== 'INPUT') {
-                        currentIndex = index;
-                        renderCurrentTask();
-                        renderTaskLists();
-                        toggleDropdown();
-                    }
-                });
-            }
 
             return li;
         }
@@ -397,21 +487,17 @@
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (diffX < -50 && activeTasks.length > 1) { // Swipe left: next task
-                    previousIndex = currentIndex;
+                if (diffX < -50 && activeTasks.length > 0) { // Swipe left: next task
                     content.classList.add('fade-out');
                     setTimeout(() => {
                         currentIndex = (currentIndex + 1) % activeTasks.length;
                         renderCurrentTask();
-                        renderTaskLists();
                     }, 300);
-                } else if (diffX > 50 && previousIndex !== null && currentIndex !== previousIndex) { // Swipe right: one step back
+                } else if (diffX > 50 && activeTasks.length > 0) { // Swipe right: previous task
                     content.classList.add('fade-out');
                     setTimeout(() => {
-                        currentIndex = previousIndex;
-                        previousIndex = null;
+                        currentIndex = (currentIndex - 1 + activeTasks.length) % activeTasks.length;
                         renderCurrentTask();
-                        renderTaskLists();
                     }, 300);
                 }
             }, { passive: true });
@@ -421,6 +507,16 @@
             isDropdownOpen = !isDropdownOpen;
             dropdownContent.classList.toggle('show', isDropdownOpen);
             dropdownBtn.style.backgroundColor = isDropdownOpen ? '#f0f0f0' : 'transparent';
+        }
+
+        function showView(viewName) {
+            mainView.classList.toggle('hidden', viewName !== 'main');
+            activeView.classList.toggle('hidden', viewName !== 'active');
+            completedView.classList.toggle('hidden', viewName !== 'completed');
+            
+            if (viewName === 'active' || viewName === 'completed') {
+                renderTaskPages();
+            }
         }
     </script>
 </body>
