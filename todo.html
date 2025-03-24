@@ -13,6 +13,7 @@
             color: #333;
             height: 100vh;
             box-sizing: border-box;
+            touch-action: pan-y; /* Better swipe handling */
         }
         
         #app-container {
@@ -21,6 +22,7 @@
             height: 100%;
             max-width: 500px;
             margin: 0 auto;
+            position: relative;
         }
         
         /* Header */
@@ -80,6 +82,40 @@
             border: 1px solid #e0e0e0;
             border-radius: 20px;
             margin: 10px 0;
+            position: relative;
+        }
+        
+        /* Desktop Arrows */
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: rgba(0,0,0,0.3);
+            z-index: 5;
+            transition: color 0.2s;
+            display: none; /* Hidden by default */
+        }
+        
+        .nav-arrow:hover {
+            color: rgba(0,0,0,0.8);
+        }
+        
+        #arrow-left {
+            left: 15px;
+        }
+        
+        #arrow-right {
+            right: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-arrow {
+                display: block;
+            }
         }
         
         .task-content {
@@ -148,6 +184,22 @@
             transform: translateX(100%);
             transition: transform 0.3s ease;
             z-index: 20;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* Smooth mobile scrolling */
+        }
+        
+        /* Custom scrollbar */
+        .list-view::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .list-view::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .list-view::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
         }
         
         .list-view.show {
@@ -209,6 +261,8 @@
         </div>
         
         <div id="task-container">
+            <button class="nav-arrow" id="arrow-left">←</button>
+            <button class="nav-arrow" id="arrow-right">→</button>
             <div class="empty-state">No tasks yet! Add one below.</div>
         </div>
         
@@ -252,6 +306,8 @@
         const activeTasksList = document.getElementById('active-tasks');
         const completedTasksList = document.getElementById('completed-tasks');
         const backBtns = document.querySelectorAll('.back-btn');
+        const arrowLeft = document.getElementById('arrow-left');
+        const arrowRight = document.getElementById('arrow-right');
 
         // State
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -296,6 +352,10 @@
         backBtns.forEach(btn => {
             btn.addEventListener('click', hideListViews);
         });
+
+        // Arrow navigation
+        arrowLeft.addEventListener('click', () => navigateTask('prev'));
+        arrowRight.addEventListener('click', () => navigateTask('next'));
 
         // Core Functions
         function addTask() {
@@ -352,7 +412,7 @@
             
             taskContent.appendChild(textElement);
             taskContent.appendChild(checkbox);
-            taskContainer.appendChild(taskContent);
+            taskContainer.insertBefore(taskContent, taskContainer.firstChild);
             
             setupSwipeGestures(taskContent, activeTasks);
         }
@@ -419,6 +479,26 @@
             }
         }
 
+        function navigateTask(direction) {
+            const activeTasks = tasks.filter(task => !task.done);
+            if (activeTasks.length <= 1) return;
+            
+            if (direction === 'next') {
+                previousIndex = currentIndex;
+                let newIndex;
+                do {
+                    newIndex = Math.floor(Math.random() * activeTasks.length);
+                } while (newIndex === currentIndex && activeTasks.length > 1);
+                
+                currentIndex = newIndex;
+                taskHistory.push(currentIndex);
+            } else if (direction === 'prev' && taskHistory.length > 0) {
+                currentIndex = taskHistory.pop();
+            }
+            
+            renderCurrentTask();
+        }
+
         function setupSwipeGestures(element, activeTasks) {
             let startX = 0;
             
@@ -433,19 +513,10 @@
                 const diffX = endX - startX;
                 
                 if (diffX < -50) { // Swipe left - random task
-                    previousIndex = currentIndex;
-                    let newIndex;
-                    do {
-                        newIndex = Math.floor(Math.random() * activeTasks.length);
-                    } while (newIndex === currentIndex && activeTasks.length > 1);
-                    
-                    currentIndex = newIndex;
-                    taskHistory.push(currentIndex);
-                    renderCurrentTask();
+                    navigateTask('next');
                 } 
-                else if (diffX > 50 && taskHistory.length > 0) { // Swipe right - previous task
-                    currentIndex = taskHistory.pop();
-                    renderCurrentTask();
+                else if (diffX > 50) { // Swipe right - previous task
+                    navigateTask('prev');
                 }
             }, { passive: true });
         }
