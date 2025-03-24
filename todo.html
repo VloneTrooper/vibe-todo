@@ -9,6 +9,7 @@
             --high-priority: #ffebee; /* Light red */
             --medium-priority: #fff8e1; /* Light yellow */
             --low-priority: #e3f2fd; /* Light blue */
+            --no-priority: white;
             --completion-flash: #e8f5e9; /* Light green */
         }
         
@@ -21,6 +22,35 @@
             height: 100vh;
             box-sizing: border-box;
             touch-action: pan-y;
+            transition: background-color 0.3s;
+        }
+        
+        /* Priority backgrounds for entire screen */
+        .priority-high {
+            background-color: var(--high-priority);
+        }
+        
+        .priority-medium {
+            background-color: var(--medium-priority);
+        }
+        
+        .priority-low {
+            background-color: var(--low-priority);
+        }
+        
+        .priority-none {
+            background-color: var(--no-priority);
+        }
+        
+        /* Completion flash for entire screen */
+        @keyframes completionFlash {
+            0% { background-color: inherit; }
+            50% { background-color: var(--completion-flash); }
+            100% { background-color: inherit; }
+        }
+        
+        .completion-flash {
+            animation: completionFlash 1s;
         }
         
         #app-container {
@@ -37,6 +67,8 @@
             display: flex;
             justify-content: flex-end;
             padding: 10px 0;
+            position: relative;
+            z-index: 2;
         }
         
         .menu-btn {
@@ -86,38 +118,15 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(0,0,0,0.1);
             border-radius: 20px;
             margin: 10px 0;
             position: relative;
-            transition: background-color 0.3s;
+            background: white;
+            z-index: 1;
         }
         
-        /* Priority Backgrounds */
-        .priority-high {
-            background-color: var(--high-priority);
-        }
-        
-        .priority-medium {
-            background-color: var(--medium-priority);
-        }
-        
-        .priority-low {
-            background-color: var(--low-priority);
-        }
-        
-        /* Completion Flash Animation */
-        @keyframes completionFlash {
-            0% { background-color: inherit; }
-            50% { background-color: var(--completion-flash); }
-            100% { background-color: inherit; }
-        }
-        
-        .completion-flash {
-            animation: completionFlash 1s;
-        }
-        
-        /* Desktop Arrows - Now visible */
+        /* Desktop Arrows */
         .nav-arrow {
             position: absolute;
             top: 50%;
@@ -194,6 +203,7 @@
         .input-container {
             position: relative;
             width: 100%;
+            z-index: 2;
         }
         
         #task-input {
@@ -224,6 +234,7 @@
             justify-content: center;
             gap: 10px;
             margin-top: 15px;
+            z-index: 2;
         }
         
         .priority-btn {
@@ -234,6 +245,27 @@
             cursor: pointer;
             opacity: 0.7;
             transition: transform 0.2s, opacity 0.2s;
+            position: relative;
+        }
+        
+        .priority-btn::after {
+            content: '✕';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 12px;
+            color: #666;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .priority-btn.none-btn {
+            background: white;
+            border: 1px solid #ddd;
+        }
+        
+        .priority-btn.none-btn::after {
+            opacity: 1;
         }
         
         .priority-btn:hover {
@@ -245,6 +277,10 @@
             opacity: 1;
             transform: scale(1.1);
             box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+        }
+        
+        .priority-btn.active::after {
+            opacity: 0;
         }
         
         /* Task List Views */
@@ -342,7 +378,7 @@
         }
     </style>
 </head>
-<body>
+<body class="priority-none">
     <div id="app-container">
         <!-- Main View -->
         <div class="header">
@@ -367,9 +403,10 @@
         </div>
         
         <div class="priority-selector" id="priority-selector">
+            <button class="priority-btn none-btn active" data-priority="none"></button>
             <button class="priority-btn" style="background: #f44336;" data-priority="high"></button>
             <button class="priority-btn" style="background: #ffc107;" data-priority="medium"></button>
-            <button class="priority-btn active" style="background: #2196f3;" data-priority="low"></button>
+            <button class="priority-btn" style="background: #2196f3;" data-priority="low"></button>
         </div>
         
         <!-- Active Tasks View -->
@@ -411,13 +448,14 @@
         const arrowRight = document.getElementById('arrow-right');
         const prioritySelector = document.getElementById('priority-selector');
         const priorityBtns = document.querySelectorAll('.priority-btn');
+        const body = document.body;
 
         // State
         let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentIndex = 0;
         let isDropdownOpen = false;
         let taskHistory = [];
-        let currentPriority = 'low'; // Default priority
+        let currentPriority = 'none'; // Default priority
 
         // Initialize
         renderCurrentTask();
@@ -486,11 +524,13 @@
             
             if (tasks.length === 0) {
                 taskContainer.innerHTML = '<div class="empty-state">No tasks yet! Add one below.</div>';
+                updateBodyPriority('none');
                 return;
             }
             
             if (activeTasks.length === 0) {
                 taskContainer.innerHTML = '<div class="empty-state">All tasks completed!</div>';
+                updateBodyPriority('none');
                 return;
             }
             
@@ -498,13 +538,18 @@
             currentIndex = currentIndex % activeTasks.length;
             const task = activeTasks[currentIndex];
             
+            // Update body class to reflect current task's priority
+            updateBodyPriority(task.priority);
+            
             const taskContent = document.createElement('div');
-            taskContent.className = `task-content priority-${task.priority}`;
+            taskContent.className = 'task-content';
             
             // Add priority indicator dot
-            const priorityDot = document.createElement('div');
-            priorityDot.className = 'priority-indicator';
-            taskContent.appendChild(priorityDot);
+            if (task.priority !== 'none') {
+                const priorityDot = document.createElement('div');
+                priorityDot.className = 'priority-indicator';
+                taskContent.appendChild(priorityDot);
+            }
             
             const textElement = document.createElement('div');
             textElement.className = 'task-text';
@@ -517,11 +562,13 @@
             checkbox.addEventListener('change', () => {
                 task.done = true;
                 saveTasks();
-                taskContainer.classList.add('completion-flash');
+                // Flash the entire screen green
+                body.classList.add('completion-flash');
                 setTimeout(() => {
+                    body.classList.remove('completion-flash');
                     renderCurrentTask();
                     renderTaskLists();
-                }, 300);
+                }, 1000);
             });
             
             taskContent.appendChild(textElement);
@@ -533,6 +580,13 @@
             taskContainer.appendChild(arrowRight);
             
             setupSwipeGestures(taskContent, activeTasks);
+        }
+
+        function updateBodyPriority(priority) {
+            // Remove all priority classes
+            body.classList.remove('priority-high', 'priority-medium', 'priority-low', 'priority-none');
+            // Add the current priority class
+            body.classList.add(`priority-${priority}`);
         }
 
         function renderTaskLists() {
@@ -549,10 +603,12 @@
                     const li = document.createElement('li');
                     li.className = 'task-item';
                     
-                    // Add priority indicator
-                    const priorityDot = document.createElement('div');
-                    priorityDot.className = `task-item-priority ${task.priority}-priority`;
-                    li.appendChild(priorityDot);
+                    // Add priority indicator if it exists
+                    if (task.priority !== 'none') {
+                        const priorityDot = document.createElement('div');
+                        priorityDot.className = `task-item-priority ${task.priority}-priority`;
+                        li.appendChild(priorityDot);
+                    }
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
@@ -561,8 +617,12 @@
                     checkbox.addEventListener('change', () => {
                         task.done = true;
                         saveTasks();
-                        renderCurrentTask();
-                        renderTaskLists();
+                        body.classList.add('completion-flash');
+                        setTimeout(() => {
+                            body.classList.remove('completion-flash');
+                            renderCurrentTask();
+                            renderTaskLists();
+                        }, 1000);
                     });
                     
                     const text = document.createElement('span');
@@ -647,9 +707,18 @@
         function setupPrioritySelector() {
             priorityBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    priorityBtns.forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
+                    priorityBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.remove('none-btn');
+                    });
+                    
                     currentPriority = e.target.dataset.priority;
+                    
+                    if (currentPriority === 'none') {
+                        e.target.classList.add('none-btn');
+                    }
+                    
+                    e.target.classList.add('active');
                 });
             });
         }
