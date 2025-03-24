@@ -8,62 +8,88 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             background: white;
             color: #333;
             height: 100vh;
-            overflow: hidden;
-        }
-        
-        /* View container */
-        .view-container {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            transition: transform 0.3s ease;
-        }
-        
-        /* Main View */
-        #main-view {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
             box-sizing: border-box;
         }
         
-        /* Task container */
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 0;
+        }
+        
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px 10px;
+        }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-content {
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 10px 0;
+            display: none;
+            z-index: 10;
+        }
+        
+        .dropdown-content.show {
+            display: block;
+        }
+        
+        .dropdown-link {
+            display: block;
+            padding: 10px 16px;
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .dropdown-link:hover {
+            background: #f5f5f5;
+        }
+        
+        /* Main Task View */
         #task-container {
             flex-grow: 1;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
-            border-radius: 25px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            margin: 10px 0;
         }
         
         .task-content {
             text-align: center;
-            font-size: 24px;
-            font-weight: 500;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-            width: 80%;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .task-content.fade-out {
-            opacity: 0;
+            width: 80%;
         }
         
         .task-text {
+            font-size: 24px;
             margin-bottom: 20px;
             word-break: break-word;
         }
@@ -71,15 +97,20 @@
         .checkbox {
             width: 28px;
             height: 28px;
-            cursor: pointer;
             accent-color: #ff6b6b;
-            margin-top: 15px;
+            cursor: pointer;
         }
         
-        /* Input area */
+        .empty-state {
+            color: #999;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        /* Input */
         .input-container {
-            width: 100%;
             position: relative;
+            width: 100%;
         }
         
         #task-input {
@@ -102,91 +133,34 @@
             font-size: 24px;
             color: #ff6b6b;
             cursor: pointer;
-            padding: 0;
-            transition: transform 0.2s;
-        }
-        
-        #add-btn:hover {
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .empty-state {
-            padding: 20px;
-            color: #999;
-            text-align: center;
-            font-style: italic;
-            font-size: 20px;
-        }
-        
-        /* Menu button */
-        .menu-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-            padding: 5px 10px;
-            border-radius: 50%;
-            z-index: 10;
-        }
-        
-        /* Dropdown menu */
-        .dropdown-content {
-            position: absolute;
-            right: 20px;
-            top: 60px;
-            background: white;
-            min-width: 200px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            padding: 10px 0;
-            transform: scale(0.95);
-            transform-origin: top right;
-            opacity: 0;
-            transition: all 0.2s;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        .dropdown-content.show {
-            transform: scale(1);
-            opacity: 1;
-            pointer-events: auto;
-        }
-        
-        .dropdown-link {
-            display: block;
-            padding: 12px 16px;
-            color: #333;
-            text-decoration: none;
-            transition: background 0.2s;
-        }
-        
-        .dropdown-link:hover {
-            background: #f8f8f8;
         }
         
         /* Task List Views */
         .list-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
+            background: white;
+            padding: 20px;
+            box-sizing: border-box;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 20;
         }
         
-        .page-header {
+        .list-view.show {
+            transform: translateX(0);
+        }
+        
+        .list-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
+            padding-bottom: 15px;
             border-bottom: 1px solid #eee;
-        }
-        
-        .page-title {
-            font-size: 20px;
-            font-weight: 500;
+            margin-bottom: 15px;
         }
         
         .back-btn {
@@ -194,13 +168,6 @@
             border: none;
             font-size: 20px;
             cursor: pointer;
-            color: #666;
-        }
-        
-        .task-list-container {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 15px;
         }
         
         .task-list {
@@ -210,56 +177,35 @@
         }
         
         .task-item {
-            padding: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .task-item:last-child {
-            border-bottom: none;
         }
         
         .task-item-checkbox {
             margin-right: 15px;
-            cursor: pointer;
             accent-color: #ff6b6b;
+            cursor: pointer;
         }
         
-        .task-item-text {
-            flex-grow: 1;
-        }
-        
-        .task-item.completed .task-item-text {
+        .task-item.completed {
             color: #999;
             text-decoration: line-through;
-        }
-        
-        /* View transitions */
-        .view-left {
-            transform: translateX(-100%);
-        }
-        
-        .view-right {
-            transform: translateX(100%);
-        }
-        
-        .view-center {
-            transform: translateX(0);
-        }
-        
-        .hidden {
-            display: none;
         }
     </style>
 </head>
 <body>
-    <!-- Main View -->
-    <div id="main-view" class="view-container view-center">
-        <button class="menu-btn" id="menu-btn">☰</button>
-        <div class="dropdown-content" id="dropdown-menu">
-            <a href="#" class="dropdown-link" id="active-link">Active Tasks</a>
-            <a href="#" class="dropdown-link" id="completed-link">Completed Tasks</a>
+    <div id="app-container">
+        <!-- Main View -->
+        <div class="header">
+            <div class="dropdown">
+                <button class="menu-btn" id="menu-btn">☰</button>
+                <div class="dropdown-content" id="dropdown-menu">
+                    <a href="#" class="dropdown-link" id="active-link">Active Tasks</a>
+                    <a href="#" class="dropdown-link" id="completed-link">Completed Tasks</a>
+                </div>
+            </div>
         </div>
         
         <div id="task-container">
@@ -270,33 +216,25 @@
             <input id="task-input" type="text" placeholder="Add a task..." maxlength="200">
             <button id="add-btn">+</button>
         </div>
-    </div>
-    
-    <!-- Active Tasks View -->
-    <div id="active-view" class="view-container view-right">
-        <div class="list-view">
-            <div class="page-header">
+        
+        <!-- Active Tasks View -->
+        <div class="list-view" id="active-view">
+            <div class="list-header">
                 <button class="back-btn">←</button>
-                <div class="page-title">Active Tasks</div>
+                <h2>Active Tasks</h2>
                 <div style="width: 24px;"></div>
             </div>
-            <div class="task-list-container">
-                <ul class="task-list" id="active-tasks"></ul>
-            </div>
+            <ul class="task-list" id="active-tasks"></ul>
         </div>
-    </div>
-    
-    <!-- Completed Tasks View -->
-    <div id="completed-view" class="view-container view-right">
-        <div class="list-view">
-            <div class="page-header">
+        
+        <!-- Completed Tasks View -->
+        <div class="list-view" id="completed-view">
+            <div class="list-header">
                 <button class="back-btn">←</button>
-                <div class="page-title">Completed Tasks</div>
+                <h2>Completed Tasks</h2>
                 <div style="width: 24px;"></div>
             </div>
-            <div class="task-list-container">
-                <ul class="task-list" id="completed-tasks"></ul>
-            </div>
+            <ul class="task-list" id="completed-tasks"></ul>
         </div>
     </div>
 
@@ -309,21 +247,14 @@
         const dropdownMenu = document.getElementById('dropdown-menu');
         const activeLink = document.getElementById('active-link');
         const completedLink = document.getElementById('completed-link');
-        
-        // Views
-        const mainView = document.getElementById('main-view');
         const activeView = document.getElementById('active-view');
         const completedView = document.getElementById('completed-view');
-        
-        // Task lists
         const activeTasksList = document.getElementById('active-tasks');
         const completedTasksList = document.getElementById('completed-tasks');
-        
-        // Navigation buttons
         const backBtns = document.querySelectorAll('.back-btn');
 
         // State
-        let tasks = loadTasks();
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
         let currentIndex = 0;
         let previousIndex = null;
         let isDropdownOpen = false;
@@ -346,39 +277,37 @@
         
         activeLink.addEventListener('click', (e) => {
             e.preventDefault();
-            navigateToView('active');
+            showListView('active');
             toggleDropdown();
         });
         
         completedLink.addEventListener('click', (e) => {
             e.preventDefault();
-            navigateToView('completed');
+            showListView('completed');
             toggleDropdown();
         });
         
         document.addEventListener('click', (e) => {
-            if (isDropdownOpen && !dropdownMenu.contains(e.target) {
+            if (isDropdownOpen && !dropdownMenu.contains(e.target) && e.target !== menuBtn) {
                 toggleDropdown();
             }
         });
         
         backBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                navigateToView('main');
-            });
+            btn.addEventListener('click', hideListViews);
         });
 
         // Core Functions
         function addTask() {
             const taskText = taskInput.value.trim();
             if (taskText) {
-                tasks.push({ 
-                    text: taskText, 
+                tasks.push({
+                    text: taskText,
                     done: false,
                     createdAt: new Date().toISOString()
                 });
-                taskInput.value = '';
                 saveTasks();
+                taskInput.value = '';
                 renderCurrentTask();
                 taskInput.focus();
             }
@@ -386,7 +315,7 @@
 
         function renderCurrentTask() {
             taskContainer.innerHTML = '';
-
+            
             const activeTasks = tasks.filter(task => !task.done);
             
             if (tasks.length === 0) {
@@ -398,169 +327,149 @@
                 taskContainer.innerHTML = '<div class="empty-state">All tasks completed!</div>';
                 return;
             }
-
-            // Initialize currentIndex if needed
-            if (currentIndex >= activeTasks.length || currentIndex < 0) {
-                currentIndex = 0;
-            }
             
+            // Ensure currentIndex is valid
+            currentIndex = currentIndex % activeTasks.length;
             const task = activeTasks[currentIndex];
             
-            const content = document.createElement('div');
-            content.className = 'task-content';
-
-            const textSpan = document.createElement('span');
-            textSpan.className = 'task-text';
-            textSpan.textContent = task.text;
-
+            const taskContent = document.createElement('div');
+            taskContent.className = 'task-content';
+            
+            const textElement = document.createElement('div');
+            textElement.className = 'task-text';
+            textElement.textContent = task.text;
+            
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'checkbox';
-            checkbox.checked = task.done;
+            checkbox.checked = false;
             checkbox.addEventListener('change', () => {
                 task.done = true;
                 saveTasks();
-                content.classList.add('fade-out');
-                setTimeout(() => {
-                    renderCurrentTask();
-                }, 300);
+                renderCurrentTask();
+                renderTaskLists();
             });
-
-            content.appendChild(textSpan);
-            content.appendChild(checkbox);
-            taskContainer.appendChild(content);
-
-            setupSwipeGestures(content, activeTasks);
+            
+            taskContent.appendChild(textElement);
+            taskContent.appendChild(checkbox);
+            taskContainer.appendChild(taskContent);
+            
+            setupSwipeGestures(taskContent, activeTasks);
         }
 
         function renderTaskLists() {
             activeTasksList.innerHTML = '';
             completedTasksList.innerHTML = '';
-
+            
             const activeTasks = tasks.filter(task => !task.done);
             const completedTasks = tasks.filter(task => task.done);
-
+            
             if (activeTasks.length === 0) {
                 activeTasksList.innerHTML = '<div class="empty-state">No active tasks</div>';
             } else {
-                activeTasks.forEach((task) => {
-                    const li = createTaskListItem(task, false);
+                activeTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = 'task-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'task-item-checkbox';
+                    checkbox.checked = false;
+                    checkbox.addEventListener('change', () => {
+                        task.done = true;
+                        saveTasks();
+                        renderCurrentTask();
+                        renderTaskLists();
+                    });
+                    
+                    const text = document.createElement('span');
+                    text.textContent = task.text;
+                    
+                    li.appendChild(checkbox);
+                    li.appendChild(text);
                     activeTasksList.appendChild(li);
                 });
             }
-
+            
             if (completedTasks.length === 0) {
                 completedTasksList.innerHTML = '<div class="empty-state">No completed tasks</div>';
             } else {
-                completedTasks.forEach((task) => {
-                    const li = createTaskListItem(task, true);
+                completedTasks.forEach(task => {
+                    const li = document.createElement('li');
+                    li.className = 'task-item completed';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'task-item-checkbox';
+                    checkbox.checked = true;
+                    checkbox.addEventListener('change', () => {
+                        task.done = false;
+                        saveTasks();
+                        renderCurrentTask();
+                        renderTaskLists();
+                    });
+                    
+                    const text = document.createElement('span');
+                    text.textContent = task.text;
+                    
+                    li.appendChild(checkbox);
+                    li.appendChild(text);
                     completedTasksList.appendChild(li);
                 });
             }
         }
 
-        function createTaskListItem(task, isCompleted) {
-            const li = document.createElement('li');
-            li.className = `task-item ${isCompleted ? 'completed' : ''}`;
-            
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'task-item-checkbox';
-            checkbox.checked = isCompleted;
-            checkbox.addEventListener('change', () => {
-                task.done = !task.done;
-                saveTasks();
-                renderCurrentTask();
-                renderTaskLists();
-            });
-
-            const textSpan = document.createElement('span');
-            textSpan.className = 'task-item-text';
-            textSpan.textContent = task.text;
-
-            li.appendChild(checkbox);
-            li.appendChild(textSpan);
-
-            return li;
-        }
-
-        function setupSwipeGestures(content, activeTasks) {
+        function setupSwipeGestures(element, activeTasks) {
             let startX = 0;
-            taskContainer.addEventListener('touchstart', (e) => {
+            
+            element.addEventListener('touchstart', (e) => {
                 startX = e.touches[0].clientX;
             }, { passive: true });
             
-            taskContainer.addEventListener('touchend', (e) => {
+            element.addEventListener('touchend', (e) => {
                 if (activeTasks.length <= 1) return;
                 
                 const endX = e.changedTouches[0].clientX;
                 const diffX = endX - startX;
                 
-                if (diffX < -50) { // Swipe left: random task
-                    content.classList.add('fade-out');
-                    setTimeout(() => {
-                        previousIndex = currentIndex;
-                        let newIndex;
-                        do {
-                            newIndex = Math.floor(Math.random() * activeTasks.length);
-                        } while (newIndex === currentIndex && activeTasks.length > 1);
-                        
-                        currentIndex = newIndex;
-                        taskHistory.push(currentIndex);
-                        renderCurrentTask();
-                    }, 300);
-                } else if (diffX > 50 && taskHistory.length > 0) { // Swipe right: previous task
-                    content.classList.add('fade-out');
-                    setTimeout(() => {
-                        currentIndex = taskHistory.pop() || 0;
-                        renderCurrentTask();
-                    }, 300);
+                if (diffX < -50) { // Swipe left - random task
+                    previousIndex = currentIndex;
+                    let newIndex;
+                    do {
+                        newIndex = Math.floor(Math.random() * activeTasks.length);
+                    } while (newIndex === currentIndex && activeTasks.length > 1);
+                    
+                    currentIndex = newIndex;
+                    taskHistory.push(currentIndex);
+                    renderCurrentTask();
+                } 
+                else if (diffX > 50 && taskHistory.length > 0) { // Swipe right - previous task
+                    currentIndex = taskHistory.pop();
+                    renderCurrentTask();
                 }
             }, { passive: true });
         }
 
-        function navigateToView(viewName) {
-            // Reset all views
-            mainView.classList.remove('view-center', 'view-left', 'view-right');
-            activeView.classList.remove('view-center', 'view-left', 'view-right');
-            completedView.classList.remove('view-center', 'view-left', 'view-right');
-            
-            if (viewName === 'main') {
-                mainView.classList.add('view-center');
-                activeView.classList.add('view-right');
-                completedView.classList.add('view-right');
-            } else if (viewName === 'active') {
-                mainView.classList.add('view-left');
-                activeView.classList.add('view-center');
-                renderTaskLists();
-            } else if (viewName === 'completed') {
-                mainView.classList.add('view-left');
-                completedView.classList.add('view-center');
-                renderTaskLists();
+        function showListView(view) {
+            if (view === 'active') {
+                activeView.classList.add('show');
+            } else {
+                completedView.classList.add('show');
             }
+        }
+
+        function hideListViews() {
+            activeView.classList.remove('show');
+            completedView.classList.remove('show');
         }
 
         function toggleDropdown() {
             isDropdownOpen = !isDropdownOpen;
-            dropdownMenu.classList.toggle('show', isDropdownOpen);
-        }
-
-        function loadTasks() {
-            try {
-                const savedTasks = localStorage.getItem('tasks');
-                return savedTasks ? JSON.parse(savedTasks) : [];
-            } catch (e) {
-                console.error('Failed to load tasks', e);
-                return [];
-            }
+            dropdownMenu.classList.toggle('show');
         }
 
         function saveTasks() {
-            try {
-                localStorage.setItem('tasks', JSON.stringify(tasks));
-            } catch (e) {
-                console.error('Failed to save tasks', e);
-            }
+            localStorage.setItem('tasks', JSON.stringify(tasks));
         }
     </script>
 </body>
